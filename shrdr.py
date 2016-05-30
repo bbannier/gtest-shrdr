@@ -56,8 +56,8 @@ def main_(options, binary):
             yield opt, n, binary
 
     try:
-        p = multiprocessing.Pool(processes=options.workers)
-        results = p.map(work, options_gen(options.workers, binary))
+        p = multiprocessing.Pool(processes=options.jobs)
+        results = p.map(work, options_gen(options.jobs, binary))
 
         nfailed = len(list(itertools.filterfalse(lambda r: r[0], results)))
 
@@ -102,11 +102,11 @@ if __name__ == '__main__':
     parser = optparse.OptionParser(
             usage='Usage: %prog [options] <test> [-- <test_options>]')
 
-    DEFAULT_NUM_WORKERS = int(multiprocessing.cpu_count() * 1.5)
-    parser.add_option('-w', '--workers', type='int',
-                      default=DEFAULT_NUM_WORKERS,
-                      help='number of workers to spawn. DEFAULT: {}'
-                      .format(DEFAULT_NUM_WORKERS))
+    DEFAULT_NUM_JOBS = int(multiprocessing.cpu_count() * 1.5)
+    parser.add_option('-j', '--jobs', type='int',
+                      default=DEFAULT_NUM_JOBS,
+                      help='number of parallel jobs to spawn. DEFAULT: {}'
+                      .format(DEFAULT_NUM_JOBS))
 
     parser.add_option('-v', '--verbosity', type='int',
                       default=1,
