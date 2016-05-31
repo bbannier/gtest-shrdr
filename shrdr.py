@@ -121,4 +121,12 @@ if __name__ == '__main__':
         parser.print_usage()
         sys.exit(1)
 
+    if not os.path.isfile(binary[0]):
+        print("{}ERROR: File '{}' does not exists{}".format(bcolors.FAIL, binary[0], bcolors.ENDC), file=sys.stderr)
+        sys.exit(1)
+
+    if not os.access(binary[0], os.X_OK):
+        print("{}ERROR: File '{}' is not executable{}".format(bcolors.FAIL, binary[0], bcolors.ENDC), file=sys.stderr)
+        sys.exit(1)
+
     main_(options, binary)
