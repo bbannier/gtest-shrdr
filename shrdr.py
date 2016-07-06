@@ -1,5 +1,7 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+from __future__ import print_function
 
 import itertools
 import multiprocessing
@@ -36,10 +38,12 @@ def work(opts):
                 stderr=subprocess.STDOUT,
                 env=env,
                 universal_newlines=True)
-        print(bcolors.OKGREEN + '.' + bcolors.ENDC, end='', flush=True)
+        print(bcolors.OKGREEN + '.' + bcolors.ENDC, end='')
+        sys.stdout.flush()
         return True, output
     except subprocess.CalledProcessError as ex:
-        print(bcolors.FAIL + 'E' + bcolors.ENDC, end='', flush=True)
+        print(bcolors.FAIL + 'E' + bcolors.ENDC, end='')
+        sys.stdout.flush()
         return False, ex.output
 
 
@@ -59,7 +63,7 @@ def main_(options, binary):
         p = multiprocessing.Pool(processes=options.jobs)
         results = p.map(work, options_gen(options.jobs, binary))
 
-        nfailed = len(list(itertools.filterfalse(lambda r: r[0], results)))
+        nfailed = len(list(itertools.ifilter(lambda r: not r[0], results)))
 
         for result in results:
             if not result[0]:
