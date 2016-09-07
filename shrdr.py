@@ -13,6 +13,12 @@ import sys
 
 
 class Bcolors:
+    '''
+    A collection of tty output modifiers.
+
+    To switch the output of a string, prefix it with the desired
+    modifier, and terminate it with 'ENDC'.
+    '''
     HEADER = '\033[95m' if sys.stdout.isatty() else ''
     OKBLUE = '\033[94m' if sys.stdout.isatty() else ''
     OKGREEN = '\033[92m' if sys.stdout.isatty() else ''
@@ -24,19 +30,27 @@ class Bcolors:
 
 
 def work(opts):
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    '''
+    Perform an acutal run of the test executable.
+
+    Expects a list of parameters giving the number of the current
+    shard, the total number of shards, and the binary to execute.
+    '''
 
     shard, nshards, binary = opts
+
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
     env = os.environ.copy()
     env['GTEST_TOTAL_SHARDS'] = str(nshards)
     env['GTEST_SHARD_INDEX'] = str(shard)
 
     try:
         output = subprocess.check_output(
-                binary,
-                stderr=subprocess.STDOUT,
-                env=env,
-                universal_newlines=True)
+            binary,
+            stderr=subprocess.STDOUT,
+            env=env,
+            universal_newlines=True)
         print(Bcolors.OKGREEN + '.' + Bcolors.ENDC, end='')
         sys.stdout.flush()
         return True, output
@@ -47,7 +61,14 @@ def work(opts):
 
 
 def main_(options, binary):
+    '''
+    Main function.
+
+    Expects a set of options, and the binary to run.
+    '''
+
     def options_gen(options, binary):
+        ''' Generator for options for a certain shard. '''
         opts = range(options.jobs)
 
         # If we run in a terminal enable colored test output. We still
@@ -70,15 +91,15 @@ def main_(options, binary):
         else:
             options.filter = '*:-' + options.sequential
 
-        p = multiprocessing.Pool(processes=options.jobs)
-        results.extend(p.map(work, options_gen(options, binary)))
+        pool = multiprocessing.Pool(processes=options.jobs)
+        results.extend(pool.map(work, options_gen(options, binary)))
 
         # Now run sequential tests.
         if options.sequential:
             options.filter = options.sequential
             options.jobs = 1
 
-            results.extend(p.map(work, options_gen(options, binary)))
+            results.extend(pool.map(work, options_gen(options, binary)))
 
         nfailed = len(list(itertools.ifilter(lambda r: not r[0], results)))
 
@@ -91,13 +112,12 @@ def main_(options, binary):
                     print(result[1], file=sys.stdout)
 
         if nfailed:
-            print(
-              '\n' +
-              Bcolors.FAIL + Bcolors.BOLD + '[FAIL]' + Bcolors.ENDC,
-              file=sys.stderr)
+            print('\n' +
+                  Bcolors.FAIL + Bcolors.BOLD + '[FAIL]' + Bcolors.ENDC,
+                  file=sys.stderr)
         else:
-            print(
-              '\n' + Bcolors.OKGREEN + Bcolors.BOLD + '[PASS]' + Bcolors.ENDC)
+            print('\n' +
+                  Bcolors.OKGREEN + Bcolors.BOLD + '[PASS]' + Bcolors.ENDC)
 
         sys.exit(nfailed)
 
@@ -107,21 +127,22 @@ def main_(options, binary):
 
         print('Caught KeyboardInterrupt, terminating workers')
 
-        p.terminate()
-        p.join()
+        pool.terminate()
+        pool.join()
 
         sys.exit(1)
     except OSError as ex:
-        p.terminate()
-        p.join()
+        pool.terminate()
+        pool.join()
 
         print('\n' + Bcolors.FAIL + 'ERROR: ' + str(ex) + Bcolors.ENDC)
 
         sys.exit(1)
 
+
 if __name__ == '__main__':
     parser = optparse.OptionParser(
-            usage='Usage: %prog [options] <test> [-- <test_options>]')
+        usage='Usage: %prog [options] <test> [-- <test_options>]')
 
     DEFAULT_NUM_JOBS = int(multiprocessing.cpu_count() * 1.5)
     parser.add_option('-j', '--jobs', type='int',
@@ -129,7 +150,7 @@ if __name__ == '__main__':
                       help='number of parallel jobs to spawn. DEFAULT: {}'
                       .format(DEFAULT_NUM_JOBS))
 
-    parser.add_option('-s', '--sequential',type='string',
+    parser.add_option('-s', '--sequential', type='string',
                       default='',
                       help='gtest filter for tests to run sequentially')
 
