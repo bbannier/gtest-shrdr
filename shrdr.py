@@ -12,7 +12,7 @@ import subprocess
 import sys
 
 
-class bcolors:
+class Bcolors:
     HEADER = '\033[95m' if sys.stdout.isatty() else ''
     OKBLUE = '\033[94m' if sys.stdout.isatty() else ''
     OKGREEN = '\033[92m' if sys.stdout.isatty() else ''
@@ -37,11 +37,11 @@ def work(opts):
                 stderr=subprocess.STDOUT,
                 env=env,
                 universal_newlines=True)
-        print(bcolors.OKGREEN + '.' + bcolors.ENDC, end='')
+        print(Bcolors.OKGREEN + '.' + Bcolors.ENDC, end='')
         sys.stdout.flush()
         return True, output
     except subprocess.CalledProcessError as ex:
-        print(bcolors.FAIL + 'E' + bcolors.ENDC, end='')
+        print(Bcolors.FAIL + 'E' + Bcolors.ENDC, end='')
         sys.stdout.flush()
         return False, ex.output
 
@@ -93,11 +93,11 @@ def main_(options, binary):
         if nfailed:
             print(
               '\n' +
-              bcolors.FAIL + bcolors.BOLD + '[FAIL]' + bcolors.ENDC,
+              Bcolors.FAIL + Bcolors.BOLD + '[FAIL]' + Bcolors.ENDC,
               file=sys.stderr)
         else:
             print(
-              '\n' + bcolors.OKGREEN + bcolors.BOLD + '[PASS]' + bcolors.ENDC)
+              '\n' + Bcolors.OKGREEN + Bcolors.BOLD + '[PASS]' + Bcolors.ENDC)
 
         sys.exit(nfailed)
 
@@ -115,7 +115,7 @@ def main_(options, binary):
         p.terminate()
         p.join()
 
-        print('\n' + bcolors.FAIL + 'ERROR: ' + str(ex) + bcolors.ENDC)
+        print('\n' + Bcolors.FAIL + 'ERROR: ' + str(ex) + Bcolors.ENDC)
 
         sys.exit(1)
 
@@ -148,20 +148,20 @@ if __name__ == '__main__':
 
     if not os.path.isfile(binary[0]):
         print("{}ERROR: File '{}' does not exists{}"
-              .format(bcolors.FAIL, binary[0], bcolors.ENDC),
+              .format(Bcolors.FAIL, binary[0], Bcolors.ENDC),
               file=sys.stderr)
         sys.exit(1)
 
     if not os.access(binary[0], os.X_OK):
         print("{}ERROR: File '{}' is not executable{}"
-              .format(bcolors.FAIL, binary[0], bcolors.ENDC),
+              .format(Bcolors.FAIL, binary[0], Bcolors.ENDC),
               file=sys.stderr)
         sys.exit(1)
 
     # Confirm that the sequential parameter does not contain negative filters.
     if options.sequential and options.sequential.count(':-'):
         print("{}ERROR: Cannot use negative filters in 'sequential' parameter: {}{}"
-              .format(bcolors.FAIL, options.sequential, bcolors.ENDC),
+              .format(Bcolors.FAIL, options.sequential, Bcolors.ENDC),
               file=sys.stderr)
         sys.exit(1)
 
@@ -171,7 +171,7 @@ if __name__ == '__main__':
             os.environ['GTEST_FILTER'].count(':-'):
         print("{}ERROR: Cannot specify both 'sequential' option and environment "
               "variable 'GTEST_FILTER' containing negative filters{}"
-              .format(bcolors.FAIL, bcolors.ENDC),
+              .format(Bcolors.FAIL, Bcolors.ENDC),
               file=sys.stderr)
         sys.exit(1)
 
