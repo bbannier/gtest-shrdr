@@ -56,12 +56,30 @@ def main_(options, binary):
         if sys.stdout.isatty():
             binary = binary[0:1] + ['--gtest_color=yes'] + binary[1:]
 
+        if options.filter:
+            binary = binary + ['--gtest_filter=' + options.filter]
+
         for opt in opts:
             yield opt, options.jobs, binary
 
     try:
+        results = []
+
+        # Run parallel test set first.
+        if os.environ.get('GTEST_FILTER'):
+            options.filter = os.environ['GTEST_FILTER'] + ':-' + options.sequential
+        else:
+            options.filter = '*:-' + options.sequential
+
         p = multiprocessing.Pool(processes=options.jobs)
-        results = p.map(work, options_gen(options, binary))
+        results.extend(p.map(work, options_gen(options, binary)))
+
+        # Now run sequential tests.
+        if options.sequential:
+            options.filter = options.sequential
+            options.jobs = 1
+
+            results.extend(p.map(work, options_gen(options, binary)))
 
         nfailed = len(list(itertools.ifilter(lambda r: not r[0], results)))
 
@@ -112,6 +130,10 @@ if __name__ == '__main__':
                       help='number of parallel jobs to spawn. DEFAULT: {}'
                       .format(DEFAULT_NUM_JOBS))
 
+    parser.add_option('-s', '--sequential',type='string',
+                      default='',
+                      help='gtest filter for tests to run sequentially')
+
     parser.add_option('-v', '--verbosity', type='int',
                       default=1,
                       help='output verbosity:'
@@ -126,11 +148,32 @@ if __name__ == '__main__':
         sys.exit(1)
 
     if not os.path.isfile(binary[0]):
-        print("{}ERROR: File '{}' does not exists{}".format(bcolors.FAIL, binary[0], bcolors.ENDC), file=sys.stderr)
+        print("{}ERROR: File '{}' does not exists{}"
+              .format(bcolors.FAIL, binary[0], bcolors.ENDC),
+              file=sys.stderr)
         sys.exit(1)
 
     if not os.access(binary[0], os.X_OK):
-        print("{}ERROR: File '{}' is not executable{}".format(bcolors.FAIL, binary[0], bcolors.ENDC), file=sys.stderr)
+        print("{}ERROR: File '{}' is not executable{}"
+              .format(bcolors.FAIL, binary[0], bcolors.ENDC),
+              file=sys.stderr)
+        sys.exit(1)
+
+    # Confirm that the sequential parameter does not contain negative filters.
+    if options.sequential and options.sequential.count(':-'):
+        print("{}ERROR: Cannot use negative filters in 'sequential' parameter: {}{}"
+              .format(bcolors.FAIL, options.sequential, bcolors.ENDC),
+              file=sys.stderr)
+        sys.exit(1)
+
+    # Confirm that the environment variable `GTEST_FILTER` does not contain
+    # negative filters if a filter for sequential tests is active.
+    if options.sequential and os.environ.get('GTEST_FILTER') and \
+            os.environ['GTEST_FILTER'].count(':-'):
+        print("{}ERROR: Cannot specify both 'sequential' option and environment "
+              "variable 'GTEST_FILTER' containing negative filters{}"
+              .format(bcolors.FAIL, bcolors.ENDC),
+              file=sys.stderr)
         sys.exit(1)
 
     main_(options, binary)
