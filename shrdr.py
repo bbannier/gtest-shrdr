@@ -7,7 +7,6 @@ import itertools
 import multiprocessing
 import optparse
 import os
-import re
 import signal
 import subprocess
 import sys
