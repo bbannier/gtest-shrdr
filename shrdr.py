@@ -48,8 +48,8 @@ def work(opts):
 
 
 def main_(options, binary):
-    def options_gen(n, binary):
-        opts = range(n)
+    def options_gen(options, binary):
+        opts = range(options.jobs)
 
         # If we run in a terminal enable colored test output. We still
         # allow users to disable this themself via extra args.
@@ -57,11 +57,11 @@ def main_(options, binary):
             binary = binary[0:1] + ['--gtest_color=yes'] + binary[1:]
 
         for opt in opts:
-            yield opt, n, binary
+            yield opt, options.jobs, binary
 
     try:
         p = multiprocessing.Pool(processes=options.jobs)
-        results = p.map(work, options_gen(options.jobs, binary))
+        results = p.map(work, options_gen(options, binary))
 
         nfailed = len(list(itertools.ifilter(lambda r: not r[0], results)))
 
