@@ -91,15 +91,22 @@ def main_(options, binary):
         else:
             options.filter = '*:-' + options.sequential
 
+
+        # Multiprocessing's `map` cannot properly handle `KeyboardInterrupt` in
+        # some python versions. Use `map_async` with an explicit timeout
+        # instead. See http://stackoverflow.com/a/1408476.
+
         pool = multiprocessing.Pool(processes=options.jobs)
-        results.extend(pool.map(work, options_gen(options, binary)))
+        results.extend(
+            pool.map_async(work, options_gen(options, binary)).get(timeout=sys.maxint))
 
         # Now run sequential tests.
         if options.sequential:
             options.filter = options.sequential
             options.jobs = 1
 
-            results.extend(pool.map(work, options_gen(options, binary)))
+            results.extend(
+                pool.map_async(work, options_gen(options, binary)).get(timeout=sys.maxint))
 
         nfailed = len(list(itertools.ifilter(lambda r: not r[0], results)))
 
