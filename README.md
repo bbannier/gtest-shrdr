@@ -14,6 +14,8 @@ Options:
   -h, --help            show this help message and exit
   -j jobs, --jobs=JOBS
                         number of workers to spawn. DEFAULT: nproc*1.5
+  -s SEQUENTIAL, --sequential=SEQUENTIAL
+                        gtest filter for test to run sequentially
   -v VERBOSITY, --verbosity=VERBOSITY
                         output verbosity: 0 only shows summarized information,
                         1 also shows full logs of failed shards, and anything
@@ -25,5 +27,4 @@ Open issues
 -----------
 
 - [ ] Add a verbosity level 3 which prints logs as they come in (in a thread-safe way)
-- [ ] Add support for providing a matcher for tests which cannot be run in parallel. These would be filtered from the parallel stage and run in isolation.
 
